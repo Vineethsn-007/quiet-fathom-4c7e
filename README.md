@@ -14,20 +14,40 @@ The product shows:
 Scope: national-level UK **wind only**, data from **Elexon BMRS** only (datasets FUELHH and WINDFOR),
 delivery days in **January 2026**. Real data — 744/744 January hours covered, no fixtures.
 
-**Deployed app:** _<paste your Vercel URL here after `vercel deploy`>_
+## Links
+
+- **Deployed app (Vercel):** https://quiet-fathom-4c7e.vercel.app/
+- **API health check:** https://quiet-fathom-4c7e.vercel.app/api/health
+- **Interactive API docs (local/Docker):** http://localhost:8000/docs
+
+## Headline findings (January 2026, forecast as of 09:00 London on D-1)
+
+| Metric | Value |
+|---|---|
+| Bias (forecast − actual) | **+1,852 MW** (forecasts run high) |
+| Share of hours where actual < forecast | **85%** |
+| MAE | 2,142 MW |
+| RMSE | 2,612 MW |
+| P95 absolute error | 5,307 MW |
+| Worst hours | 02:00–06:00 (≈ 2.4–2.5 GW MAE) |
+| Worst delivery days | 28, 12 and 11 January |
+
+Practical reading: at this cutoff the historical P90 of over-forecast error is roughly 4,300 MW, so
+a buyer wanting ~90% historical coverage should hold a wind buffer of about that size. This is an
+empirical statement about January 2026 only, not a guarantee. Full detail in `docs/ANALYSIS.md`.
 
 ## Quick start
 
-### With Docker (recommended, one command)
+### With Docker (verified, one command)
 
 ```bash
 docker compose up --build
 # frontend: http://localhost:5174   backend API docs: http://localhost:8000/docs
 ```
 
-> Note: on the machine this repo was authored on, Docker was not available, so the compose stack
-> was written to standard patterns but not executed there — if anything differs, see
-> "Run without Docker" below, which is verified.
+The compose stack has been built and run end to end; all five UI pages load data through the
+frontend container's `/api` proxy. Stop it with `docker compose down`. If ports 8000 or 5174 are
+busy, stop whatever is using them first.
 
 ### Without Docker (verified)
 
@@ -72,6 +92,8 @@ serves; re-run and commit to refresh. An optional guarded live-refresh endpoint 
 
 ## Deployment (Vercel)
 
+Live at **https://quiet-fathom-4c7e.vercel.app/**.
+
 The repo deploys as one Vercel project with separate `frontend` (Vite) and `backend` (FastAPI)
 services. The frontend is public on all non-API paths, and `/api/*` is routed to the public backend.
 The backend build copies the committed snapshot into its service root and bundles it with the
@@ -88,7 +110,7 @@ vercel deploy --prod       # builds both services and applies the public rewrite
 `frontend`. The backend uses `DATA_DIR` if configured; otherwise it reads the copied service-local
 `data/` snapshot on Vercel and the repository-level `data/` snapshot during local development. The
 Vite client uses same-origin `/api` requests; no API URL environment variable is needed for this
-deployment.
+deployment. The deployed app serves only the committed snapshot and makes no live Elexon calls.
 
 Dev notes: `VITE_API_BASE` empty ⇒ same-origin/proxy; set it to the absolute API URL when served
 separately. `.env.example` documents all env vars.
@@ -127,6 +149,8 @@ validation errors otherwise.
   posted in UI land on D-1 "yesterday" relative to the delivery day, in Europe/London; DST handled
   via `zoneinfo` (fold=0 for ambiguous autumn times; spring-gap times normalise per IANA rules).
   January itself is all-GMT so London and UTC coincide — the labelling is made explicit in the UI.
+  The 09:00 default is a modelling assumption; day-ahead auction gate closures vary by exchange, so
+  the cutoff is user-configurable.
 - **Alignment:** WINDFOR forecasts are hourly (startTime on the hour); FUELHH actuals are 30-min.
   Hourly actual = mean of the two half-hours (`halfHours` count kept to expose hours averaged from
   one half-hour). Error is compared at hourly granularity.
@@ -139,6 +163,9 @@ validation errors otherwise.
 - **Uncertainty band:** empirical percentile-of-error per horizon bucket, assuming error
   stationarity; not a probabilistic forecast model. Risk-adjusted wind = forecast + lowWindP10Delta
   (= forecast − P90 error) giving ≈90% historical coverage.
+- **Possible source of bias:** WINDFOR is a national forecast while FUELHH reflects metered
+  (transmission-connected) output, so differences in what each series covers may contribute to the
+  observed over-forecast. This has not been isolated within the project's scope.
 - **No invented data:** the app reads only the committed snapshot produced by the verified
   ingestion script against the live BMRS v1 API.
 
@@ -147,6 +174,8 @@ validation errors otherwise.
 - **Snapshot freshness:** data is frozen at ingest time; a scheduled re-run + commit (or enabling
   `ENABLE_LIVE_REFRESH`) is manual today. Natural follow-up: CI cron job that reuploads the
   snapshot weekly.
+- **Single month:** all statistics come from one month (744 hours, 31 delivery days), so the bias
+  and buffer figures should be re-estimated on a longer history before being relied on.
 - **Wind-flow confound:** at a fixed cutoff, horizon and hour-of-day are correlated; per-bucket
   bands partly control for this, but a regime-aware calibration (rolling window) would help.
 - Scope is national wind only; distribution-level or per-week granularity is out of scope.
