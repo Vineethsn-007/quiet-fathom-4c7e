@@ -1,0 +1,26 @@
+{
+  "source": "Elexon BMRS",
+  "generated_utc": "2026-11-01T11:42:06.438335+00:00",
+  "forecasts": {
+    "raw_rows": 36792,
+    "deduped_rows": 36792,
+    "unique_publishes": 504,
+    "min_publish": "2025-12-01T02:30:00+00:00",
+    "max_publish": "2026-02-01T22:30:00+00:00",
+    "min_start_covered": "2025-11-30T21:00:00+00:00",
+    "max_start_covered": "2026-02-03T21:00:00+00:00"
+  },
+  "actuals": {
+    "raw_rows": 1617,
+    "deduped_rows": 1584,
+    "nan_coerced": 0,
+    "missing_intervals": 0,
+    "expected_intervals": 1584,
+    "min_start": "2026-01-01T00:00:00+00:00",
+    "max_start": "2026-02-02T23:30:00+00:00"
+  },
+  "actuals_hourly_halfhour_coverage": {
+    "hours_with_2_halfhours": 792,
+    "hours_with_1_halfhour": 0
+  }
+}

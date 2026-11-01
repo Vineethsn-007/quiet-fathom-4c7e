@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Environment
+.env
+.env.local
+
+# Scratch
+.scratch/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NOTE: data/*.parquet and data/*.json are COMMITTED on purpose (deployment snapshot).

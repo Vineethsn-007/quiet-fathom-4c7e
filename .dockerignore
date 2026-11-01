@@ -1,0 +1,15 @@
+node_modules
+dist
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.scratch
+docs
+.github
+.env
+.env.local
+# data/*.parquet is deliberately NOT ignored: the backend image reads the committed snapshot.
