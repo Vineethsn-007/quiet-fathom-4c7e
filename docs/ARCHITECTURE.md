@@ -15,7 +15,7 @@ flowchart LR
     end
     B --> C[FastAPI backend<br/>app/services/analysis.py<br/>decision-time selection,<br/>metrics, bands]
     C -->|REST JSON| D[React SPA<br/>5 pages, Recharts]
-    C --> E[Docker compose / Vercel serverless]
+    C --> E[Docker compose / Vercel backend service]
     D --> F[Buyer at 09:00 on D-1<br/>risk-adjusted wind figure]
 ```
 
@@ -29,8 +29,9 @@ flowchart LR
    - aligns actuals to hourly (mean of the two half-hours) with a coverage count per hour;
    - writes compact parquet files plus an `ingest_report.json` and runs sanity checks
      (0 ≤ MW ≤ 30,000, no NaNs).
-2. **Serving.** Both the Docker backend and the Vercel serverless function read the same
-   committed parquet snapshot — the deployed app never calls Elexon live.
+2. **Serving.** The Docker backend and Vercel backend service read the same committed parquet
+   snapshot — the deployed app never calls Elexon live. Vercel copies the snapshot into the
+   backend service root before bundling it with the FastAPI function.
 3. **Decision logic.** For delivery day D and cutoff on D-1 (default 09:00 Europe/London → UTC):
    per-hour selection of the forecast row with the greatest `publishTime ≤ cutoff`
    (`app/services/analysis.py#eval_pairs_df`, mirroring the unit-tested
@@ -63,5 +64,6 @@ frontend/src/api      typed client; hooks/useFetch; utils/format+csv
 scripts/fetch_data.py offline ingestion CLI
 data/*.parquet        committed snapshot consumed at runtime
 docs/                 ARCHITECTURE, ANALYSIS, DEMO_SCRIPT
-api/index.py          Vercel serverless entrypoint
+api/index.py          legacy single-service Vercel entrypoint
+vercel.json           Vercel frontend/backend services and public routing
 ```

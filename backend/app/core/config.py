@@ -23,8 +23,17 @@ class Settings(BaseModel):
     def from_env(cls) -> "Settings":
         cors = os.environ.get("CORS_ORIGINS", "*")
         origins = [o.strip() for o in cors.split(",") if o.strip()]
+        backend_root = Path(__file__).resolve().parents[2]
+        backend_data_dir = backend_root / "data"
+        repository_data_dir = backend_root.parent / "data"
+        data_dir = Path(
+            os.environ.get(
+                "DATA_DIR",
+                backend_data_dir if backend_data_dir.is_dir() else repository_data_dir,
+            )
+        )
         return cls(
-            data_dir=Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parents[3] / "data")),
+            data_dir=data_dir,
             cors_origins=origins or ["*"],
             enable_live_refresh=os.environ.get("ENABLE_LIVE_REFRESH", "0") == "1",
         )

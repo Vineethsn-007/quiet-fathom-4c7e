@@ -72,20 +72,23 @@ serves; re-run and commit to refresh. An optional guarded live-refresh endpoint 
 
 ## Deployment (Vercel)
 
-The repo is structured for a single Vercel project (static SPA + Python serverless API reading the
-committed snapshot):
+The repo deploys as one Vercel project with separate `frontend` (Vite) and `backend` (FastAPI)
+services. The frontend is public on all non-API paths, and `/api/*` is routed to the public backend.
+The backend build copies the committed snapshot into its service root and bundles it with the
+FastAPI function. The browser calls the API through the same-origin `/api` path, so no service
+binding is needed: bindings are for server-side service-to-service calls.
 
 ```bash
 npm i -g vercel
 vercel link                # create/attach the project
-vercel deploy --prod       # uses vercel.json: builds frontend/dist + api/index.py (FastAPI ASGI)
+vercel deploy --prod       # builds both services and applies the public rewrites in vercel.json
 ```
 
-`vercel.json` rewrites `/api/*` to the serverless function and bundles `data/**` into it via
-`includeFiles`. `buildCommand` builds the React app to `dist`. Set no env vars — `DATA_DIR`
-defaults to the bundled `data/` directory. (Fallback if Python serverless misbehaves: plain
-`vercel` static frontend + a small backend on a separate Vercel project/Heroku; set
-`VITE_API_BASE` on the frontend and `CORS_ORIGINS` on the backend accordingly.)
+`vercel.json` declares both services and routes `/api/*` to `backend` before routing other paths to
+`frontend`. The backend uses `DATA_DIR` if configured; otherwise it reads the copied service-local
+`data/` snapshot on Vercel and the repository-level `data/` snapshot during local development. The
+Vite client uses same-origin `/api` requests; no API URL environment variable is needed for this
+deployment.
 
 Dev notes: `VITE_API_BASE` empty ⇒ same-origin/proxy; set it to the absolute API URL when served
 separately. `.env.example` documents all env vars.
@@ -104,7 +107,7 @@ data/                  committed snapshot: actuals.parquet, actuals_60min.parque
                        forecasts.parquet, ingest_report.json
 docs/                  ARCHITECTURE.md, ANALYSIS.md (real January-2026 findings), DEMO_SCRIPT.md
 Dockerfile, frontend/Dockerfile, docker-compose.yml, .dockerignore
-api/index.py, vercel.json (Vercel deployment)
+api/index.py (legacy single-service entrypoint), vercel.json (Vercel services and routing)
 Makefile, .github/workflows/ci.yml, .env.example
 ```
 
